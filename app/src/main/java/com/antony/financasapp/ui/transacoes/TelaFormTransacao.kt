@@ -90,13 +90,22 @@ fun TelaFormTransacao(
     }
 
     if (estado.confirmandoExclusao) {
-        AlertDialog(
-            onDismissRequest = viewModel::cancelarExclusao,
-            title = { Text("Excluir transação?") },
-            text = { Text("\"${estado.descricao}\" será apagada.") },
-            confirmButton = { TextButton(onClick = viewModel::confirmarExclusao) { Text("Excluir") } },
-            dismissButton = { TextButton(onClick = viewModel::cancelarExclusao) { Text("Cancelar") } }
+        DialogoExcluirTransacao(
+            descricao = estado.descricao,
+            parcela = estado.parcela,
+            aoEscolher = viewModel::confirmarExclusao,
+            aoCancelar = viewModel::cancelarExclusao
         )
+    }
+
+    if (estado.perguntandoEscopo) {
+        estado.parcela?.let {
+            DialogoEscopoDaEdicao(
+                parcela = it,
+                aoEscolher = viewModel::escolherEscopo,
+                aoCancelar = viewModel::cancelarEscopo
+            )
+        }
     }
 }
 
@@ -112,6 +121,19 @@ private fun Formulario(estado: FormTransacaoUiState, viewModel: FormTransacaoVie
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        estado.parcela?.let { parcela ->
+            // Deixa claro que é uma parcela: ao salvar, o app pergunta se a mudança vale para as próximas
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "Parcela ${parcela.numero} de ${parcela.total} de uma compra no crédito",
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
+        }
+
         OutlinedTextField(
             value = estado.descricao,
             onValueChange = viewModel::aoMudarDescricao,
@@ -167,7 +189,10 @@ private fun Formulario(estado: FormTransacaoUiState, viewModel: FormTransacaoVie
             selecionado = estado.formaPagamento.rotulo,
             opcoes = FormaPagamento.entries,
             textoDaOpcao = { it.rotulo },
-            aoEscolher = viewModel::aoMudarFormaPagamento
+            aoEscolher = viewModel::aoMudarFormaPagamento,
+            // Uma parcela continua sendo crédito: para mudar isso, exclua a compra e crie de novo
+            habilitado = estado.parcela == null,
+            ajuda = if (estado.parcela != null) "Parcelas são sempre no crédito" else null
         )
 
         // Parcelas só existem no crédito. Na edição não aparecem: a API divide em parcelas
@@ -225,17 +250,20 @@ private fun <T> CampoDeLista(
     opcoes: List<T>,
     textoDaOpcao: (T) -> String,
     aoEscolher: (T) -> Unit,
-    erro: String? = null
+    erro: String? = null,
+    habilitado: Boolean = true,
+    ajuda: String? = null
 ) {
     var aberto by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = aberto, onExpandedChange = { aberto = it }) {
+    ExposedDropdownMenuBox(expanded = aberto, onExpandedChange = { if (habilitado) aberto = it }) {
         OutlinedTextField(
             value = selecionado,
             onValueChange = {},
             readOnly = true,
+            enabled = habilitado,
             label = { Text(rotulo) },
             isError = erro != null,
-            supportingText = erro?.let { { Text(it) } },
+            supportingText = (erro ?: ajuda)?.let { { Text(it) } },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = aberto) },
             // menuAnchor liga o menu a este campo (posição e largura)
             modifier = Modifier

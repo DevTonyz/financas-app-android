@@ -6,6 +6,7 @@ import com.antony.financasapp.data.CategoriaRepository
 import com.antony.financasapp.data.Resultado
 import com.antony.financasapp.data.TransacaoRepository
 import com.antony.financasapp.dto.CategoriaResponse
+import com.antony.financasapp.dto.EscopoParcelas
 import com.antony.financasapp.dto.FormaPagamento
 import com.antony.financasapp.dto.TransacaoRequest
 import com.antony.financasapp.ui.dataDaApiParaIso
@@ -25,6 +26,8 @@ data class FormTransacaoUiState(
     // Erro ao abrir (ex.: transação não existe mais): ocupa a tela toda
     val erroAoCarregar: String? = null,
     val categorias: List<CategoriaResponse> = emptyList(),
+    // Preenchido quando a transação editada é parcela de uma compra no crédito
+    val parcela: InfoParcela? = null,
     // Campos do formulário. O valor fica como texto para o usuário poder digitar "12," sem o campo brigar
     val descricao: String = "",
     val valor: String = "",
@@ -40,6 +43,8 @@ data class FormTransacaoUiState(
     // Erro vindo da API ao salvar ou excluir
     val erro: String? = null,
     val salvando: Boolean = false,
+    // Diálogos abertos: "só esta ou as próximas?" ao salvar uma parcela, e a confirmação de exclusão
+    val perguntandoEscopo: Boolean = false,
     val confirmandoExclusao: Boolean = false,
     // Preenchido quando salvou/excluiu: a tela mostra a mensagem e volta
     val concluido: String? = null
@@ -83,7 +88,9 @@ class FormTransacaoViewModel(
                     _uiState.update {
                         it.copy(
                             carregando = false,
-                            descricao = t.descricao,
+                            parcela = infoParcela(t.numeroParcela, t.parcelas),
+                            // Numa parcela mostramos o nome sem o " 2/3": a API recoloca o número ao salvar
+                            descricao = t.descricaoBase ?: t.descricao,
                             valor = valorParaTexto(t.valor),
                             // A API devolve "dd/MM/yyyy"; convertemos para o formato que ela recebe
                             data = dataDaApiParaIso(t.data),
@@ -118,8 +125,29 @@ class FormTransacaoViewModel(
     fun salvar() {
         val estado = _uiState.value
         if (estado.salvando) return
+        val request = montarRequest() ?: return
 
-        // Validação antes de enviar: a API também valida, mas assim o erro aparece no campo certo
+        // Parcela que tem outras depois dela: pergunta antes se a mudança vale para as próximas
+        val parcela = estado.parcela
+        if (parcela != null && !parcela.ehUltima) {
+            _uiState.update { it.copy(perguntandoEscopo = true) }
+            return
+        }
+        enviar(request, EscopoParcelas.ESTA)
+    }
+
+    fun escolherEscopo(escopo: EscopoParcelas) {
+        _uiState.update { it.copy(perguntandoEscopo = false) }
+        val request = montarRequest() ?: return
+        enviar(request, escopo)
+    }
+
+    fun cancelarEscopo() = _uiState.update { it.copy(perguntandoEscopo = false) }
+
+    // Valida os campos e monta o corpo da requisição. Devolve null (e marca os erros) se algo estiver errado
+    private fun montarRequest(): TransacaoRequest? {
+        val estado = _uiState.value
+        // A validação também existe na API, mas aqui o erro aparece no campo certo
         val valor = textoParaValor(estado.valor)
         // Parcelas só valem no crédito; nas outras formas a API recebe 1
         val parcelas = if (estado.formaPagamento == FormaPagamento.CREDITO) estado.parcelas.toIntOrNull() else 1
@@ -128,17 +156,15 @@ class FormTransacaoViewModel(
         val erroCategoria = if (estado.categoriaId == null) "Escolha uma categoria" else null
         val erroParcelas = if (parcelas == null || parcelas !in 1..48) "De 1 a 48 parcelas" else null
 
-        if (erroDescricao != null || erroValor != null || erroCategoria != null || erroParcelas != null) {
-            _uiState.update {
-                it.copy(
-                    erroDescricao = erroDescricao, erroValor = erroValor,
-                    erroCategoria = erroCategoria, erroParcelas = erroParcelas
-                )
-            }
-            return
+        _uiState.update {
+            it.copy(
+                erroDescricao = erroDescricao, erroValor = erroValor,
+                erroCategoria = erroCategoria, erroParcelas = erroParcelas
+            )
         }
+        if (erroDescricao != null || erroValor != null || erroCategoria != null || erroParcelas != null) return null
 
-        val request = TransacaoRequest(
+        return TransacaoRequest(
             descricao = estado.descricao.trim(),
             valor = valor!!,
             data = estado.data,
@@ -147,7 +173,9 @@ class FormTransacaoViewModel(
             parcelas = parcelas!!,
             grupoId = grupoId
         )
+    }
 
+    private fun enviar(request: TransacaoRequest, escopo: EscopoParcelas) {
         _uiState.update { it.copy(salvando = true, erro = null) }
         viewModelScope.launch {
             val resultado: Resultado<String> = if (id == null) {
@@ -157,8 +185,10 @@ class FormTransacaoViewModel(
                     is Resultado.Erro -> r
                 }
             } else {
-                when (val r = repository.atualizar(id, request)) {
-                    is Resultado.Sucesso -> Resultado.Sucesso("Transação atualizada")
+                when (val r = repository.atualizar(id, request, escopo)) {
+                    is Resultado.Sucesso -> Resultado.Sucesso(
+                        if (escopo == EscopoParcelas.PROXIMAS) "Parcelas atualizadas" else "Transação atualizada"
+                    )
                     is Resultado.Erro -> r
                 }
             }
@@ -170,13 +200,13 @@ class FormTransacaoViewModel(
 
     fun cancelarExclusao() = _uiState.update { it.copy(confirmandoExclusao = false) }
 
-    fun confirmarExclusao() {
+    fun confirmarExclusao(escopo: EscopoParcelas) {
         val id = id ?: return
         _uiState.update { it.copy(confirmandoExclusao = false, salvando = true, erro = null) }
         viewModelScope.launch {
             terminar(
-                when (val r = repository.excluir(id)) {
-                    is Resultado.Sucesso -> Resultado.Sucesso("Transação excluída")
+                when (val r = repository.excluir(id, escopo)) {
+                    is Resultado.Sucesso -> Resultado.Sucesso(mensagemDeExclusao(escopo))
                     is Resultado.Erro -> r
                 }
             )

@@ -7,6 +7,7 @@ import com.antony.financasapp.data.FiltroTransacoes
 import com.antony.financasapp.data.Resultado
 import com.antony.financasapp.data.TransacaoRepository
 import com.antony.financasapp.dto.CategoriaResponse
+import com.antony.financasapp.dto.EscopoParcelas
 import com.antony.financasapp.dto.TransacaoResponse
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -117,13 +118,13 @@ class TransacoesViewModel(
 
     fun cancelarExclusao() = _uiState.update { it.copy(paraExcluir = null) }
 
-    fun confirmarExclusao() {
+    fun confirmarExclusao(escopo: EscopoParcelas) {
         val transacao = _uiState.value.paraExcluir ?: return
         _uiState.update { it.copy(paraExcluir = null) }
         viewModelScope.launch {
-            when (val resultado = repository.excluir(transacao.id)) {
+            when (val resultado = repository.excluir(transacao.id, escopo)) {
                 // A lista recarrega sozinha pelo "mudancas"; aqui só avisamos
-                is Resultado.Sucesso -> _uiState.update { it.copy(aviso = "Transação excluída") }
+                is Resultado.Sucesso -> _uiState.update { it.copy(aviso = mensagemDeExclusao(escopo)) }
                 is Resultado.Erro -> _uiState.update { it.copy(aviso = resultado.mensagem) }
             }
         }
@@ -131,3 +132,7 @@ class TransacoesViewModel(
 
     fun avisoMostrado() = _uiState.update { it.copy(aviso = null) }
 }
+
+// Usada aqui e no formulário
+fun mensagemDeExclusao(escopo: EscopoParcelas) =
+    if (escopo == EscopoParcelas.ESTA) "Transação excluída" else "Parcelas excluídas"

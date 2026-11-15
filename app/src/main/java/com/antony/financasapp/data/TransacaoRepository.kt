@@ -1,5 +1,6 @@
 package com.antony.financasapp.data
 
+import com.antony.financasapp.dto.EscopoParcelas
 import com.antony.financasapp.dto.PaginaResponse
 import com.antony.financasapp.dto.TransacaoRequest
 import com.antony.financasapp.dto.TransacaoResponse
@@ -71,11 +72,15 @@ class TransacaoRepository(private val api: ApiService) {
     suspend fun criar(request: TransacaoRequest): Resultado<Int> =
         chamar({ api.criarTransacao(request) }, avisaMudanca = true) { it.body().orEmpty().size }
 
-    suspend fun atualizar(id: Long, request: TransacaoRequest): Resultado<TransacaoResponse> =
-        chamar({ api.atualizarTransacao(id, request) }, avisaMudanca = true) { it.body()!! }
+    suspend fun atualizar(
+        id: Long,
+        request: TransacaoRequest,
+        escopo: EscopoParcelas = EscopoParcelas.ESTA
+    ): Resultado<TransacaoResponse> =
+        chamar({ api.atualizarTransacao(id, request, escopo) }, avisaMudanca = true) { it.body()!! }
 
-    suspend fun excluir(id: Long): Resultado<Unit> =
-        chamar({ api.excluirTransacao(id) }, avisaMudanca = true) { }
+    suspend fun excluir(id: Long, escopo: EscopoParcelas = EscopoParcelas.ESTA): Resultado<Unit> =
+        chamar({ api.excluirTransacao(id, escopo) }, avisaMudanca = true) { }
 
     // Faz a chamada e trata os erros num lugar só (mesma ideia do CategoriaRepository)
     private suspend fun <R, T> chamar(

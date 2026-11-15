@@ -108,12 +108,11 @@ fun TelaTransacoes(
     }
 
     estado.paraExcluir?.let { transacao ->
-        AlertDialog(
-            onDismissRequest = viewModel::cancelarExclusao,
-            title = { Text("Excluir transação?") },
-            text = { Text("\"${transacao.descricao}\" será apagada.") },
-            confirmButton = { TextButton(onClick = viewModel::confirmarExclusao) { Text("Excluir") } },
-            dismissButton = { TextButton(onClick = viewModel::cancelarExclusao) { Text("Cancelar") } }
+        DialogoExcluirTransacao(
+            descricao = transacao.descricao,
+            parcela = infoParcela(transacao.numeroParcela, transacao.parcelas),
+            aoEscolher = viewModel::confirmarExclusao,
+            aoCancelar = viewModel::cancelarExclusao
         )
     }
 }

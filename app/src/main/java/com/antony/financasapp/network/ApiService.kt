@@ -8,6 +8,7 @@ import com.antony.financasapp.dto.LoginRequest
 import com.antony.financasapp.dto.LoginResponse
 import com.antony.financasapp.dto.PaginaResponse
 import com.antony.financasapp.dto.ResumoResponse
+import com.antony.financasapp.dto.EscopoParcelas
 import com.antony.financasapp.dto.TransacaoRequest
 import com.antony.financasapp.dto.TransacaoResponse
 import retrofit2.Response
@@ -69,14 +70,20 @@ interface ApiService {
     @POST("/transacoes")
     suspend fun criarTransacao(@Body request: TransacaoRequest): Response<List<TransacaoResponse>>
 
+    // O escopo só faz diferença em parcelas de uma compra (ESTA ou PROXIMAS)
     @PUT("/transacoes/{id}")
     suspend fun atualizarTransacao(
         @Path("id") id: Long,
-        @Body request: TransacaoRequest
+        @Body request: TransacaoRequest,
+        @Query("escopo") escopo: EscopoParcelas = EscopoParcelas.ESTA
     ): Response<TransacaoResponse>
 
+    // Em parcelas: ESTA, PROXIMAS ou TODAS (a compra inteira)
     @DELETE("/transacoes/{id}")
-    suspend fun excluirTransacao(@Path("id") id: Long): Response<Void>
+    suspend fun excluirTransacao(
+        @Path("id") id: Long,
+        @Query("escopo") escopo: EscopoParcelas = EscopoParcelas.ESTA
+    ): Response<Void>
 
     // Categorias: a API só devolve e altera as do usuário logado
     @GET("/categorias")

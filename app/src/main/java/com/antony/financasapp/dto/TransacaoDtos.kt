@@ -21,8 +21,14 @@ data class TransacaoResponse(
     val categoriaId: Long?,
     val formaPagamento: FormaPagamento?,
     val parcelas: Int?,
-    val grupoId: Long?
+    val grupoId: Long?,
+    // Só em parcelas de uma compra no crédito: qual parcela é (1, 2...) e a descrição sem o " 2/3"
+    val numeroParcela: Int?,
+    val descricaoBase: String?
 )
+
+// A quais parcelas de uma compra a edição ou exclusão se aplica (vai na URL: ?escopo=PROXIMAS)
+enum class EscopoParcelas { ESTA, PROXIMAS, TODAS }
 
 // Corpo de POST /transacoes e PUT /transacoes/{id}. Aqui a data ENTRA em "yyyy-MM-dd"
 data class TransacaoRequest(
