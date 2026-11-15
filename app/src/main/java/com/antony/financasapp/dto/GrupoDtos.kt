@@ -41,6 +41,7 @@ data class AcertoResponse(
     val mes: Int,
     val ano: Int,
     val total: BigDecimal,
+    // Parte de quem está logado (quem entrou no meio do mês só divide os gastos a partir da entrada)
     val parteJusta: BigDecimal,
     val membros: List<MembroAcertoResponse>
 )

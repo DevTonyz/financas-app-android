@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Logo do app (carteira com um cartão e o fecho em forma de moeda). Usado no topo do login e do cadastro -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Cartão saindo da carteira -->
+    <path
+        android:fillColor="#F5BE48"
+        android:pathData="M11,14 L29.5,7.2 A2,2 0 0,1 32,8.4 L34,14 Z" />
+    <!-- Corpo da carteira -->
+    <path
+        android:fillColor="#006A60"
+        android:pathData="M10,14 H36 A4,4 0 0,1 40,18 V36 A4,4 0 0,1 36,40 H10 A4,4 0 0,1 6,36 V18 A4,4 0 0,1 10,14 Z" />
+    <!-- Fecho -->
+    <path
+        android:fillColor="#82D5C8"
+        android:pathData="M31,22.5 H42 V31.5 H31 A4.5,4.5 0 0,1 31,22.5 Z" />
+    <!-- Moeda no fecho -->
+    <path
+        android:fillColor="#F5BE48"
+        android:pathData="M31,24.5 A2.5,2.5 0 1,1 31,29.5 A2.5,2.5 0 1,1 31,24.5 Z" />
+</vector>

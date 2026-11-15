@@ -1,5 +1,8 @@
 package com.antony.financasapp.ui.transacoes
 
+import com.antony.financasapp.ui.EstadoVazio
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -89,9 +92,12 @@ fun TelaTransacoes(
                         Button(onClick = { viewModel.carregar() }) { Text("Tentar de novo") }
                     }
 
-                    estado.transacoes.isEmpty() -> Text(
-                        if (estado.filtro == FiltroTransacoes.Todas) "Nenhuma transação ainda"
+                    estado.transacoes.isEmpty() -> EstadoVazio(
+                        icone = if (estado.filtro == FiltroTransacoes.Todas) Icons.Filled.ShoppingCart else Icons.Filled.Search,
+                        texto = if (estado.filtro == FiltroTransacoes.Todas) "Nenhuma transação ainda"
                         else "Nenhuma transação com este filtro",
+                        dica = if (estado.filtro == FiltroTransacoes.Todas) "Toque em + para lançar um gasto."
+                        else "Tente outra categoria ou outro período.",
                         modifier = Modifier.align(Alignment.Center)
                     )
 

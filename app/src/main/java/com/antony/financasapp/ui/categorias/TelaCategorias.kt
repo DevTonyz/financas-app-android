@@ -1,5 +1,7 @@
 package com.antony.financasapp.ui.categorias
 
+import com.antony.financasapp.ui.EstadoVazio
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -83,8 +85,10 @@ fun TelaCategorias(
                     Button(onClick = viewModel::carregar) { Text("Tentar de novo") }
                 }
 
-                estado.categorias.isEmpty() -> Text(
-                    "Nenhuma categoria. Toque em + para criar.",
+                estado.categorias.isEmpty() -> EstadoVazio(
+                    icone = Icons.AutoMirrored.Filled.List,
+                    texto = "Nenhuma categoria",
+                    dica = "Toque em + para criar a primeira.",
                     modifier = Modifier.align(Alignment.Center)
                 )
 

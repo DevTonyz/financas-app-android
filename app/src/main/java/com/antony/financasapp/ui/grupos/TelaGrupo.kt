@@ -1,5 +1,8 @@
 package com.antony.financasapp.ui.grupos
 
+import com.antony.financasapp.ui.theme.receber
+import com.antony.financasapp.ui.EstadoVazio
+import androidx.compose.material.icons.filled.ShoppingCart
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,7 +19,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -39,8 +41,7 @@ import com.antony.financasapp.ui.millisUtcParaIso
 import com.antony.financasapp.ui.mesPorExtenso
 import com.antony.financasapp.ui.transacoes.ItemDeTransacao
 
-// Verde para quem tem a receber. O vermelho (deve) vem do tema: colorScheme.error
-private val VerdeReceber = Color(0xFF2E7D32)
+// Verde de quem tem a receber: colorScheme.receber (ui/theme). O vermelho de quem deve: colorScheme.error
 
 // Detalhe do grupo: membros, saldo acumulado (com "Registrar pagamento") e o mês (total, gastos, pagamentos)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -179,7 +180,14 @@ private fun ConteudoDoGrupo(
                 item { Titulo("Gastos do grupo") }
 
                 if (dados.transacoes.isEmpty()) {
-                    item { Text("Nenhum gasto do grupo neste mês. Toque em + para lançar.") }
+                    item {
+                        EstadoVazio(
+                            icone = Icons.Filled.ShoppingCart,
+                            texto = "Nenhum gasto do grupo neste mês",
+                            dica = "Toque em + para lançar.",
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 } else {
                     items(dados.transacoes, key = { "t${it.id}" }) { t ->
                         val minha = t.usuarioId != null && t.usuarioId == estado.meuId
@@ -298,7 +306,7 @@ private fun CardDoSaldo(
 private fun LinhaDoSaldo(membro: SaldoDoMembro) {
     val sinal = membro.saldo.signum()
     val cor = when {
-        sinal > 0 -> VerdeReceber
+        sinal > 0 -> MaterialTheme.colorScheme.receber
         sinal < 0 -> MaterialTheme.colorScheme.error
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -331,7 +339,8 @@ private fun CardDoMes(estado: GrupoUiState, dados: DadosDoGrupoNoMes) {
                 fontWeight = FontWeight.Bold
             )
             Text(
-                "Parte de cada um: ${formatarReais(dados.acerto.parteJusta)}",
+                // Com a data de entrada, cada um pode ter uma parte diferente: mostramos só a sua
+                "Sua parte no mês: ${formatarReais(dados.acerto.parteJusta)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -368,7 +377,7 @@ private fun ItemDePagamento(estado: GrupoUiState, p: PagamentoResponse, aoExclui
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Text(formatarReais(p.valor), fontWeight = FontWeight.SemiBold, color = VerdeReceber)
+            Text(formatarReais(p.valor), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.receber)
             if (envolveMim) {
                 IconButton(onClick = aoExcluir) {
                     Icon(Icons.Filled.Delete, contentDescription = "Apagar pagamento")

@@ -1,5 +1,7 @@
 package com.antony.financasapp.ui.painel
 
+import com.antony.financasapp.ui.EstadoVazio
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -94,7 +96,11 @@ fun TelaPainel(
 
                     if (estado.transacoes.isEmpty()) {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("Nenhum gasto neste mês")
+                            EstadoVazio(
+                                icone = Icons.Filled.ShoppingCart,
+                                texto = "Nenhum gasto neste mês",
+                                dica = "Toque em + para lançar um gasto."
+                            )
                         }
                     } else {
                         // LazyColumn só desenha os itens visíveis na tela (como o RecyclerView)
@@ -116,8 +122,15 @@ fun TelaPainel(
 
 @Composable
 private fun CardDoTotal(total: String) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp)) {
+    // primaryContainer: o número principal da tela ganha a cor do app (nos dois modos)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    ) {
+        Column(Modifier.padding(20.dp)) {
             Text("Total gasto no mês", style = MaterialTheme.typography.labelLarge)
             Text(total, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         }

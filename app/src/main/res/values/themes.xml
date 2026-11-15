@@ -1,8 +1,14 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+    <!-- Tema das Activities (antes do Compose desenhar). A cor de fundo igual à do FinancasTheme
+         evita um "piscar" branco ao abrir o app no modo escuro -->
     <style name="Base.Theme.FinancasApp" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">#006A60</item>
+        <item name="android:windowBackground">#F5FBF8</item>
+        <!-- Barras do sistema com o fundo do app e ícones escuros (senão a hora e a bateria somem no fundo claro) -->
+        <item name="android:statusBarColor">#F5FBF8</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">#F5FBF8</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
     </style>
 
     <style name="Theme.FinancasApp" parent="Base.Theme.FinancasApp" />

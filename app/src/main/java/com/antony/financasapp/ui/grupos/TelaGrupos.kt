@@ -1,5 +1,7 @@
 package com.antony.financasapp.ui.grupos
 
+import com.antony.financasapp.ui.EstadoVazio
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -61,11 +63,11 @@ fun TelaGrupos(
                     Button(onClick = viewModel::carregar) { Text("Tentar de novo") }
                 }
 
-                estado.grupos.isEmpty() -> Text(
-                    "Você ainda não está em nenhum grupo.\nToque em + para criar um e dividir as contas.",
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(24.dp)
+                estado.grupos.isEmpty() -> EstadoVazio(
+                    icone = Icons.Filled.Person,
+                    texto = "Você ainda não está em nenhum grupo",
+                    dica = "Toque em + para criar um e dividir as contas.",
+                    modifier = Modifier.align(Alignment.Center)
                 )
 
                 else -> LazyColumn(contentPadding = PaddingValues(bottom = 88.dp)) {
