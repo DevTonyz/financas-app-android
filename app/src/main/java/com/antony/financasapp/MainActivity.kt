@@ -16,6 +16,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
+import com.antony.financasapp.core.SessionEvents
 import com.antony.financasapp.core.SessionManager
 import com.antony.financasapp.dto.LoginRequest
 import com.antony.financasapp.network.RetrofitClient
@@ -37,7 +38,21 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
 
                     // 2. Lê o cofre: se tem token, vai pra home. Se não, vai pro login.
-                    val rotaDeLargada = if (sessionManager.buscarToken() != null) "home" else "login"
+                    // (o remember garante que essa decisão é tomada só uma vez, na abertura do app)
+                    val rotaDeLargada = remember { if (sessionManager.buscarToken() != null) "home" else "login" }
+
+                    // Volta para o login e limpa o histórico, para o botão "voltar" não reabrir a home
+                    val irParaLogin = {
+                        navController.navigate("login") {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+
+                    // Se a API disser que o token venceu (401), o interceptor avisa e caímos aqui
+                    LaunchedEffect(Unit) {
+                        SessionEvents.sessaoExpirada.collect { irParaLogin() }
+                    }
 
                     // 3. Configura o Roteador e cadastra as telas
                     NavHost(
@@ -50,7 +65,12 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable("home") {
-                            TelaPrincipal(sessionManager = sessionManager)
+                            TelaPrincipal(
+                                onSair = {
+                                    sessionManager.limparToken()
+                                    irParaLogin()
+                                }
+                            )
                         }
                     }
                 }
@@ -132,7 +152,7 @@ fun TelaDeLogin(navController: NavController) {
 }
 
 @Composable
-fun TelaPrincipal(sessionManager: SessionManager) {
+fun TelaPrincipal(onSair: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -142,10 +162,8 @@ fun TelaPrincipal(sessionManager: SessionManager) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = {
-            // Apaga o token para você conseguir testar o login novamente
-            sessionManager.limparToken()
-        }) {
+        // A tela só avisa que o usuário quer sair; quem apaga o token e navega é a MainActivity
+        Button(onClick = onSair) {
             Text("Sair da Conta")
         }
     }
