@@ -10,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import com.antony.financasapp.core.SessionEvents
 import com.antony.financasapp.ui.appAtual
 import com.antony.financasapp.ui.cadastro.TelaDeCadastro
+import com.antony.financasapp.ui.categorias.TelaCategorias
 import com.antony.financasapp.ui.login.TelaDeLogin
 import com.antony.financasapp.ui.painel.TelaPainel
 
@@ -18,6 +19,7 @@ object Rotas {
     const val LOGIN = "login"
     const val CADASTRO = "cadastro"
     const val HOME = "home"
+    const val CATEGORIAS = "categorias"
 }
 
 // Vai para [rota] e apaga todo o histórico, para o botão "voltar" não reabrir telas antigas
@@ -58,11 +60,16 @@ fun AppNavHost() {
 
         composable(Rotas.HOME) {
             TelaPainel(
+                onAbrirCategorias = { navController.navigate(Rotas.CATEGORIAS) },
                 onSair = {
                     app.authRepository.sair()
                     navController.irLimpandoHistorico(Rotas.LOGIN)
                 }
             )
+        }
+
+        composable(Rotas.CATEGORIAS) {
+            TelaCategorias(onVoltar = { navController.popBackStack() })
         }
     }
 }

@@ -7,9 +7,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -26,6 +30,7 @@ import com.antony.financasapp.ui.mesPorExtenso
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TelaPainel(
+    onAbrirCategorias: () -> Unit,
     onSair: () -> Unit,
     viewModel: PainelViewModel = viewModel { PainelViewModel(app().transacaoRepository) }
 ) {
@@ -35,11 +40,7 @@ fun TelaPainel(
         topBar = {
             TopAppBar(
                 title = { Text("Minhas finanças") },
-                actions = {
-                    IconButton(onClick = onSair) {
-                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Sair")
-                    }
-                }
+                actions = { MenuDoPainel(onAbrirCategorias, onSair) }
             )
         }
     ) { espacoDasBarras ->
@@ -136,6 +137,28 @@ private fun ItemDeTransacao(transacao: TransacaoResponse) {
                 )
             }
             Text(formatarReais(transacao.valor), fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+// Menu dos três pontinhos na barra superior. Aberto/fechado é só visual, por isso fica na tela
+@Composable
+private fun MenuDoPainel(onAbrirCategorias: () -> Unit, onSair: () -> Unit) {
+    var aberto by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { aberto = true }) {
+            Icon(Icons.Filled.MoreVert, contentDescription = "Menu")
+        }
+        DropdownMenu(expanded = aberto, onDismissRequest = { aberto = false }) {
+            DropdownMenuItem(
+                text = { Text("Categorias") },
+                onClick = { aberto = false; onAbrirCategorias() }
+            )
+            DropdownMenuItem(
+                text = { Text("Sair") },
+                leadingIcon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null) },
+                onClick = { aberto = false; onSair() }
+            )
         }
     }
 }

@@ -2,6 +2,8 @@ package com.antony.financasapp.network
 
 import com.antony.financasapp.dto.CadastroRequest
 import com.antony.financasapp.dto.CadastroResponse
+import com.antony.financasapp.dto.CategoriaRequest
+import com.antony.financasapp.dto.CategoriaResponse
 import com.antony.financasapp.dto.LoginRequest
 import com.antony.financasapp.dto.LoginResponse
 import com.antony.financasapp.dto.PaginaResponse
@@ -9,8 +11,11 @@ import com.antony.financasapp.dto.ResumoResponse
 import com.antony.financasapp.dto.TransacaoResponse
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
@@ -38,4 +43,23 @@ interface ApiService {
         @Query("size") tamanho: Int = 10,
         @Query("sort") ordem: String = "data,desc"
     ): Response<PaginaResponse<TransacaoResponse>>
+
+    // Categorias: a API só devolve e altera as do usuário logado
+    @GET("/categorias")
+    suspend fun listarCategorias(): Response<List<CategoriaResponse>>
+
+    @POST("/categorias")
+    suspend fun criarCategoria(@Body request: CategoriaRequest): Response<CategoriaResponse>
+
+    // @Path troca o {id} da URL pelo valor do parâmetro
+    @PUT("/categorias/{id}")
+    suspend fun renomearCategoria(
+        @Path("id") id: Long,
+        @Body request: CategoriaRequest
+    ): Response<CategoriaResponse>
+
+    // 204 = apagada | 404 = não existe (ou é de outra pessoa) | 409 = tem gastos ligados
+    // Void porque a resposta de sucesso não tem corpo
+    @DELETE("/categorias/{id}")
+    suspend fun excluirCategoria(@Path("id") id: Long): Response<Void>
 }
