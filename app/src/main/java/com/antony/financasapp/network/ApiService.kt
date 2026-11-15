@@ -10,6 +10,9 @@ import com.antony.financasapp.dto.GrupoRequest
 import com.antony.financasapp.dto.GrupoResponse
 import com.antony.financasapp.dto.LoginRequest
 import com.antony.financasapp.dto.NovoMembroRequest
+import com.antony.financasapp.dto.PagamentoRequest
+import com.antony.financasapp.dto.PagamentoResponse
+import com.antony.financasapp.dto.SaldosResponse
 import com.antony.financasapp.dto.LoginResponse
 import com.antony.financasapp.dto.PaginaResponse
 import com.antony.financasapp.dto.ResumoResponse
@@ -154,4 +157,28 @@ interface ApiService {
         @Query("mes") mes: Int,
         @Query("ano") ano: Int
     ): Response<AcertoResponse>
+
+    // --- Acerto acumulado ---
+    @GET("/grupos/{id}/saldos")
+    suspend fun saldosDoGrupo(@Path("id") id: Long): Response<SaldosResponse>
+
+    @GET("/grupos/{id}/pagamentos")
+    suspend fun pagamentosDoGrupo(
+        @Path("id") id: Long,
+        @Query("inicio") inicio: String,
+        @Query("fim") fim: String
+    ): Response<List<PagamentoResponse>>
+
+    // Só quem pagou ou quem recebeu pode registrar (senão 403)
+    @POST("/grupos/{id}/pagamentos")
+    suspend fun registrarPagamento(
+        @Path("id") id: Long,
+        @Body request: PagamentoRequest
+    ): Response<PagamentoResponse>
+
+    @DELETE("/grupos/{id}/pagamentos/{idPagamento}")
+    suspend fun excluirPagamento(
+        @Path("id") id: Long,
+        @Path("idPagamento") idPagamento: Long
+    ): Response<Void>
 }

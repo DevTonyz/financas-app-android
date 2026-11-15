@@ -5,6 +5,9 @@ import com.antony.financasapp.dto.GrupoDetalheResponse
 import com.antony.financasapp.dto.GrupoRequest
 import com.antony.financasapp.dto.GrupoResponse
 import com.antony.financasapp.dto.NovoMembroRequest
+import com.antony.financasapp.dto.PagamentoRequest
+import com.antony.financasapp.dto.PagamentoResponse
+import com.antony.financasapp.dto.SaldosResponse
 import com.antony.financasapp.dto.TransacaoResponse
 import com.antony.financasapp.network.ApiService
 import kotlinx.coroutines.async
@@ -44,7 +47,16 @@ class GrupoRepository(private val api: ApiService) {
     suspend fun sair(id: Long): Resultado<Unit> =
         chamar({ api.sairDoGrupo(id) }, avisaMudanca = true) { }
 
-    // Total, gastos e acerto de um mês. As três chamadas vão em paralelo (async), em vez de uma depois da outra
+    suspend fun saldos(id: Long): Resultado<SaldosResponse> =
+        chamar({ api.saldosDoGrupo(id) }) { it.body()!! }
+
+    suspend fun registrarPagamento(id: Long, request: PagamentoRequest): Resultado<PagamentoResponse> =
+        chamar({ api.registrarPagamento(id, request) }) { it.body()!! }
+
+    suspend fun excluirPagamento(id: Long, idPagamento: Long): Resultado<Unit> =
+        chamar({ api.excluirPagamento(id, idPagamento) }) { }
+
+    // Total, gastos, quem pagou quanto e pagamentos de um mês. As três chamadas vão em paralelo (async), em vez de uma depois da outra
     suspend fun buscarMes(id: Long, mes: Int, ano: Int): Resultado<DadosDoGrupoNoMes> = coroutineScope {
         val inicio = String.format(Locale.US, "%04d-%02d-01", ano, mes)
         val ultimoDia = Calendar.getInstance().apply { set(ano, mes - 1, 1) }.getActualMaximum(Calendar.DAY_OF_MONTH)
@@ -53,19 +65,23 @@ class GrupoRepository(private val api: ApiService) {
         val resumo = async { chamar({ api.resumoDoGrupo(id, mes, ano) }) { it.body()?.totalGasto ?: BigDecimal.ZERO } }
         val lista = async { chamar({ api.transacoesDoGrupo(id, inicio, fim) }) { it.body()?.content.orEmpty() } }
         val acerto = async { chamar({ api.acertoDoGrupo(id, mes, ano) }) { it.body()!! } }
+        val pagamentos = async { chamar({ api.pagamentosDoGrupo(id, inicio, fim) }) { it.body().orEmpty() } }
 
         val r = resumo.await()
         val l = lista.await()
         val a = acerto.await()
+        val p = pagamentos.await()
         when {
             r is Resultado.Erro -> r
             l is Resultado.Erro -> l
             a is Resultado.Erro -> a
+            p is Resultado.Erro -> p
             else -> Resultado.Sucesso(
                 DadosDoGrupoNoMes(
                     total = (r as Resultado.Sucesso).dados,
                     transacoes = (l as Resultado.Sucesso).dados,
-                    acerto = (a as Resultado.Sucesso).dados
+                    acerto = (a as Resultado.Sucesso).dados,
+                    pagamentos = (p as Resultado.Sucesso).dados
                 )
             )
         }
@@ -101,5 +117,7 @@ class GrupoRepository(private val api: ApiService) {
 data class DadosDoGrupoNoMes(
     val total: BigDecimal,
     val transacoes: List<TransacaoResponse>,
-    val acerto: AcertoResponse
+    // "Quem pagou quanto" no mês (o saldo que vale é o acumulado, em SaldosResponse)
+    val acerto: AcertoResponse,
+    val pagamentos: List<PagamentoResponse>
 )
