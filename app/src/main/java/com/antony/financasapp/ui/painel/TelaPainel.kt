@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -17,20 +18,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.antony.financasapp.dto.TransacaoResponse
 import com.antony.financasapp.ui.app
 import com.antony.financasapp.ui.formatarReais
 import com.antony.financasapp.ui.mesPorExtenso
+import com.antony.financasapp.ui.transacoes.ItemDeTransacao
 
 // Tela inicial: o mês selecionado, o total gasto e as últimas transações
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TelaPainel(
     onAbrirCategorias: () -> Unit,
+    onVerTodas: () -> Unit,
+    onNovaTransacao: () -> Unit,
+    onEditarTransacao: (Long) -> Unit,
     onSair: () -> Unit,
     viewModel: PainelViewModel = viewModel { PainelViewModel(app().transacaoRepository) }
 ) {
@@ -42,6 +45,11 @@ fun TelaPainel(
                 title = { Text("Minhas finanças") },
                 actions = { MenuDoPainel(onAbrirCategorias, onSair) }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = onNovaTransacao) {
+                Icon(Icons.Filled.Add, contentDescription = "Nova transação")
+            }
         }
     ) { espacoDasBarras ->
         // espacoDasBarras = o quanto a TopAppBar ocupa, para o conteúdo não ficar embaixo dela
@@ -75,8 +83,14 @@ fun TelaPainel(
                 else -> {
                     CardDoTotal(formatarReais(estado.total))
                     Spacer(Modifier.height(16.dp))
-                    Text("Últimas transações", style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Últimas transações", style = MaterialTheme.typography.titleMedium)
+                        TextButton(onClick = onVerTodas) { Text("Ver todas") }
+                    }
 
                     if (estado.transacoes.isEmpty()) {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -84,8 +98,14 @@ fun TelaPainel(
                         }
                     } else {
                         // LazyColumn só desenha os itens visíveis na tela (como o RecyclerView)
-                        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(estado.transacoes, key = { it.id }) { ItemDeTransacao(it) }
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            // Espaço no fim para o botão "+" não cobrir o último item
+                            contentPadding = PaddingValues(bottom = 88.dp)
+                        ) {
+                            items(estado.transacoes, key = { it.id }) {
+                                ItemDeTransacao(it, aoTocar = { onEditarTransacao(it.id) })
+                            }
                         }
                     }
                 }
@@ -117,26 +137,6 @@ private fun CardDoTotal(total: String) {
         Column(Modifier.padding(16.dp)) {
             Text("Total gasto no mês", style = MaterialTheme.typography.labelLarge)
             Text(total, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-@Composable
-private fun ItemDeTransacao(transacao: TransacaoResponse) {
-    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(transacao.descricao, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(
-                    "${transacao.nomeCategoria ?: "Sem categoria"} • ${transacao.data}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Text(formatarReais(transacao.valor), fontWeight = FontWeight.SemiBold)
         }
     }
 }

@@ -9,6 +9,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -38,6 +39,11 @@ class PainelViewModel(private val repository: TransacaoRepository) : ViewModel()
 
     init {
         carregar()
+        // Criou, editou ou excluiu uma transação em outra tela? Recarrega o total e a lista.
+        // drop(1) ignora o valor atual, que chega assim que começamos a escutar
+        viewModelScope.launch {
+            repository.mudancas.drop(1).collect { carregar() }
+        }
     }
 
     fun mesAnterior() = trocarMes(-1)

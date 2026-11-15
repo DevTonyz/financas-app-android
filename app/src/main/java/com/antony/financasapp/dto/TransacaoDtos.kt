@@ -16,8 +16,32 @@ data class TransacaoResponse(
     val descricao: String,
     val valor: BigDecimal,
     val data: String,
-    val nomeCategoria: String?
+    val nomeCategoria: String?,
+    // Campos usados para preencher o formulário de edição
+    val categoriaId: Long?,
+    val formaPagamento: FormaPagamento?,
+    val parcelas: Int?,
+    val grupoId: Long?
 )
+
+// Corpo de POST /transacoes e PUT /transacoes/{id}. Aqui a data ENTRA em "yyyy-MM-dd"
+data class TransacaoRequest(
+    val descricao: String,
+    val valor: BigDecimal,
+    val data: String,
+    val categoriaId: Long,
+    val formaPagamento: FormaPagamento,
+    val parcelas: Int,
+    val grupoId: Long? = null
+)
+
+// O Gson converte o enum pelo nome ("CREDITO"), que é o mesmo que a API usa
+enum class FormaPagamento(val rotulo: String) {
+    CREDITO("Crédito"),
+    DEBITO("Débito"),
+    PIX("Pix"),
+    DINHEIRO("Dinheiro")
+}
 
 // Página do Spring (Page<T>). Genérica: serve para transações e, depois, para outras listas
 data class PaginaResponse<T>(

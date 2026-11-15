@@ -4,6 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -13,6 +15,8 @@ import com.antony.financasapp.ui.cadastro.TelaDeCadastro
 import com.antony.financasapp.ui.categorias.TelaCategorias
 import com.antony.financasapp.ui.login.TelaDeLogin
 import com.antony.financasapp.ui.painel.TelaPainel
+import com.antony.financasapp.ui.transacoes.TelaFormTransacao
+import com.antony.financasapp.ui.transacoes.TelaTransacoes
 
 // Nomes das rotas num lugar só, para não errar digitando "home" em vários arquivos
 object Rotas {
@@ -20,6 +24,11 @@ object Rotas {
     const val CADASTRO = "cadastro"
     const val HOME = "home"
     const val CATEGORIAS = "categorias"
+    const val TRANSACOES = "transacoes"
+
+    // "?id={id}" deixa o id opcional: sem ele a tela cria, com ele edita
+    const val FORM_TRANSACAO = "transacao?id={id}"
+    fun formTransacao(id: Long? = null) = if (id == null) "transacao" else "transacao?id=$id"
 }
 
 // Vai para [rota] e apaga todo o histórico, para o botão "voltar" não reabrir telas antigas
@@ -61,6 +70,9 @@ fun AppNavHost() {
         composable(Rotas.HOME) {
             TelaPainel(
                 onAbrirCategorias = { navController.navigate(Rotas.CATEGORIAS) },
+                onVerTodas = { navController.navigate(Rotas.TRANSACOES) },
+                onNovaTransacao = { navController.navigate(Rotas.formTransacao()) },
+                onEditarTransacao = { navController.navigate(Rotas.formTransacao(it)) },
                 onSair = {
                     app.authRepository.sair()
                     navController.irLimpandoHistorico(Rotas.LOGIN)
@@ -70,6 +82,23 @@ fun AppNavHost() {
 
         composable(Rotas.CATEGORIAS) {
             TelaCategorias(onVoltar = { navController.popBackStack() })
+        }
+
+        composable(Rotas.TRANSACOES) {
+            TelaTransacoes(
+                onVoltar = { navController.popBackStack() },
+                onNova = { navController.navigate(Rotas.formTransacao()) },
+                onEditar = { navController.navigate(Rotas.formTransacao(it)) }
+            )
+        }
+
+        composable(
+            Rotas.FORM_TRANSACAO,
+            // Long não aceita null como argumento de rota, então -1 significa "sem id"
+            arguments = listOf(navArgument("id") { type = NavType.LongType; defaultValue = -1L })
+        ) { entrada ->
+            val id = entrada.arguments?.getLong("id")?.takeIf { it > 0 }
+            TelaFormTransacao(id = id, onVoltar = { navController.popBackStack() })
         }
     }
 }

@@ -8,6 +8,7 @@ import com.antony.financasapp.dto.LoginRequest
 import com.antony.financasapp.dto.LoginResponse
 import com.antony.financasapp.dto.PaginaResponse
 import com.antony.financasapp.dto.ResumoResponse
+import com.antony.financasapp.dto.TransacaoRequest
 import com.antony.financasapp.dto.TransacaoResponse
 import retrofit2.Response
 import retrofit2.http.Body
@@ -43,6 +44,39 @@ interface ApiService {
         @Query("size") tamanho: Int = 10,
         @Query("sort") ordem: String = "data,desc"
     ): Response<PaginaResponse<TransacaoResponse>>
+
+    // Todas as transações do usuário, da mais nova para a mais antiga
+    @GET("/transacoes")
+    suspend fun listarTransacoes(
+        @Query("page") pagina: Int = 0,
+        @Query("size") tamanho: Int = 10,
+        @Query("sort") ordem: String = "data,desc"
+    ): Response<PaginaResponse<TransacaoResponse>>
+
+    @GET("/transacoes/categoria/{id}")
+    suspend fun transacoesPorCategoria(
+        @Path("id") categoriaId: Long,
+        @Query("page") pagina: Int = 0,
+        @Query("size") tamanho: Int = 10,
+        @Query("sort") ordem: String = "data,desc"
+    ): Response<PaginaResponse<TransacaoResponse>>
+
+    // 404 se não existe ou é de outra pessoa
+    @GET("/transacoes/{id}")
+    suspend fun buscarTransacao(@Path("id") id: Long): Response<TransacaoResponse>
+
+    // Devolve uma LISTA: no crédito parcelado a API cria uma transação por mês
+    @POST("/transacoes")
+    suspend fun criarTransacao(@Body request: TransacaoRequest): Response<List<TransacaoResponse>>
+
+    @PUT("/transacoes/{id}")
+    suspend fun atualizarTransacao(
+        @Path("id") id: Long,
+        @Body request: TransacaoRequest
+    ): Response<TransacaoResponse>
+
+    @DELETE("/transacoes/{id}")
+    suspend fun excluirTransacao(@Path("id") id: Long): Response<Void>
 
     // Categorias: a API só devolve e altera as do usuário logado
     @GET("/categorias")
