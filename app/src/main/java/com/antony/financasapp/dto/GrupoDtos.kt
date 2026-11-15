@@ -24,14 +24,17 @@ data class GrupoDetalheResponse(
 )
 
 // "voce" = é o usuário logado (o app não guarda o próprio id; a API diz quem é)
+// dataEntrada vem em "yyyy-MM-dd" e é nula para quem já era membro antes dessa regra (divide tudo).
+// Cada gasto só é dividido entre quem já estava no grupo na data dele
 data class MembroResponse(
     val id: Long,
     val login: String,
-    val voce: Boolean
+    val voce: Boolean,
+    val dataEntrada: String? = null
 )
 
-// Corpo de POST /grupos/{id}/membros
-data class NovoMembroRequest(val login: String)
+// Corpo de POST /grupos/{id}/membros. dataEntrada em "yyyy-MM-dd" (sem ela, a API usa hoje)
+data class NovoMembroRequest(val login: String, val dataEntrada: String? = null)
 
 // GET /transacoes/grupo/{id}/acerto?mes=&ano=
 data class AcertoResponse(

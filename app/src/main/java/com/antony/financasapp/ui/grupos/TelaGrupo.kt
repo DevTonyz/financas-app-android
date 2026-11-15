@@ -32,7 +32,10 @@ import com.antony.financasapp.dto.SaldosResponse
 import com.antony.financasapp.dto.SugestaoDePagamento
 import com.antony.financasapp.ui.SeletorDeMes
 import com.antony.financasapp.ui.app
+import com.antony.financasapp.ui.dataIsoParaExibir
 import com.antony.financasapp.ui.formatarReais
+import com.antony.financasapp.ui.isoParaMillisUtc
+import com.antony.financasapp.ui.millisUtcParaIso
 import com.antony.financasapp.ui.mesPorExtenso
 import com.antony.financasapp.ui.transacoes.ItemDeTransacao
 
@@ -233,7 +236,17 @@ private fun CardDeMembros(grupo: GrupoDetalheResponse, aoAdicionar: () -> Unit) 
                 }
             }
             grupo.membros.forEach { membro ->
-                Text(if (membro.voce) "${membro.login} (você)" else membro.login)
+                Column(Modifier.padding(vertical = 2.dp)) {
+                    Text(if (membro.voce) "${membro.login} (você)" else membro.login)
+                    // Mostrar a data deixa claro por que alguém não divide os gastos mais antigos
+                    membro.dataEntrada?.let {
+                        Text(
+                            "Entrou em ${dataIsoParaExibir(it)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
     }
@@ -367,6 +380,8 @@ private fun ItemDePagamento(estado: GrupoUiState, p: PagamentoResponse, aoExclui
     }
 }
 
+// OptIn: o DatePicker do Material 3 ainda é marcado como experimental nesta versão
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Dialogos(estado: GrupoUiState, viewModel: GrupoViewModel) {
     if (estado.adicionando) {
@@ -386,6 +401,16 @@ private fun Dialogos(estado: GrupoUiState, viewModel: GrupoViewModel) {
                         supportingText = estado.erroEmail?.let { { Text(it) } },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                     )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(onClick = viewModel::abrirDataEntrada, modifier = Modifier.fillMaxWidth()) {
+                        Text("Entrou em ${dataIsoParaExibir(estado.dataEntrada)}")
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Gastos de antes dessa data não serão divididos com essa pessoa.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             },
             confirmButton = {
@@ -395,6 +420,23 @@ private fun Dialogos(estado: GrupoUiState, viewModel: GrupoViewModel) {
             },
             dismissButton = { TextButton(onClick = viewModel::fecharAdicionar) { Text("Cancelar") } }
         )
+    }
+
+    // Calendário da data de entrada (o mesmo do formulário de gasto; trabalha em milissegundos UTC)
+    if (estado.escolhendoDataEntrada) {
+        val calendario = rememberDatePickerState(initialSelectedDateMillis = isoParaMillisUtc(estado.dataEntrada))
+        DatePickerDialog(
+            onDismissRequest = viewModel::fecharDataEntrada,
+            confirmButton = {
+                TextButton(onClick = {
+                    calendario.selectedDateMillis?.let { viewModel.aoMudarDataEntrada(millisUtcParaIso(it)) }
+                        ?: viewModel.fecharDataEntrada()
+                }) { Text("OK") }
+            },
+            dismissButton = { TextButton(onClick = viewModel::fecharDataEntrada) { Text("Cancelar") } }
+        ) {
+            DatePicker(state = calendario)
+        }
     }
 
     estado.registrando?.let { r ->

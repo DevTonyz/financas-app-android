@@ -41,8 +41,8 @@ class GrupoRepository(private val api: ApiService) {
     suspend fun detalhar(id: Long): Resultado<GrupoDetalheResponse> =
         chamar({ api.detalharGrupo(id) }) { it.body()!! }
 
-    suspend fun adicionarMembro(id: Long, email: String): Resultado<GrupoDetalheResponse> =
-        chamar({ api.adicionarMembro(id, NovoMembroRequest(email.trim())) }) { it.body()!! }
+    suspend fun adicionarMembro(id: Long, email: String, dataEntrada: String): Resultado<GrupoDetalheResponse> =
+        chamar({ api.adicionarMembro(id, NovoMembroRequest(email.trim(), dataEntrada)) }) { it.body()!! }
 
     suspend fun sair(id: Long): Resultado<Unit> =
         chamar({ api.sairDoGrupo(id) }, avisaMudanca = true) { }

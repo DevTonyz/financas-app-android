@@ -53,6 +53,9 @@ data class GrupoUiState(
     val adicionando: Boolean = false,
     val email: String = "",
     val erroEmail: String? = null,
+    // Quando a pessoa entrou ("yyyy-MM-dd"). Gastos de antes dessa data não são divididos com ela
+    val dataEntrada: String = hojeIso(),
+    val escolhendoDataEntrada: Boolean = false,
     val salvando: Boolean = false,
     val confirmandoSaida: Boolean = false,
     val registrando: RegistroDePagamento? = null,
@@ -146,7 +149,19 @@ class GrupoViewModel(
     }
 
     // --- Adicionar membro ---
-    fun abrirAdicionar() = _uiState.update { it.copy(adicionando = true, email = "", erroEmail = null) }
+    fun abrirAdicionar() = _uiState.update {
+        it.copy(adicionando = true, email = "", erroEmail = null, dataEntrada = hojeIso())
+    }
+
+    fun abrirDataEntrada() = _uiState.update { it.copy(escolhendoDataEntrada = true) }
+
+    fun fecharDataEntrada() = _uiState.update { it.copy(escolhendoDataEntrada = false) }
+
+    fun aoMudarDataEntrada(iso: String) = _uiState.update {
+        // Comparar strings "yyyy-MM-dd" funciona como comparar datas. Entrada no futuro não faz sentido
+        val data = if (iso > hojeIso()) hojeIso() else iso
+        it.copy(dataEntrada = data, escolhendoDataEntrada = false)
+    }
 
     fun fecharAdicionar() = _uiState.update { it.copy(adicionando = false) }
 
@@ -162,7 +177,7 @@ class GrupoViewModel(
         }
         _uiState.update { it.copy(salvando = true, erroEmail = null) }
         viewModelScope.launch {
-            when (val r = repository.adicionarMembro(id, email)) {
+            when (val r = repository.adicionarMembro(id, email, _uiState.value.dataEntrada)) {
                 is Resultado.Sucesso -> {
                     _uiState.update {
                         it.copy(salvando = false, adicionando = false, grupo = r.dados, aviso = "$email agora faz parte do grupo")
