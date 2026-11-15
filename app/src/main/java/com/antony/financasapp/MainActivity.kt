@@ -98,7 +98,7 @@ fun TelaDeLogin(navController: NavController) {
                 scope.launch {
                     try {
                         val request = LoginRequest(email, senha)
-                        val response = RetrofitClient.apiService.fazerLogin(request)
+                        val response = RetrofitClient.getApiService(context).fazerLogin(request)
 
                         if (response.isSuccessful) {
                             val tokenDeAcesso = response.body()?.token
