@@ -62,4 +62,9 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation("androidx.navigation:navigation-compose:2.7.7")
+
+    // ViewModel no Compose: guarda o estado das telas e sobrevive a girar o celular
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    // collectAsStateWithLifecycle: a tela só escuta o estado enquanto está visível
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
 }
