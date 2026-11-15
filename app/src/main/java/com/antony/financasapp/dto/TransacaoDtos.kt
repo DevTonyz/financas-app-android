@@ -24,7 +24,10 @@ data class TransacaoResponse(
     val grupoId: Long?,
     // Só em parcelas de uma compra no crédito: qual parcela é (1, 2...) e a descrição sem o " 2/3"
     val numeroParcela: Int?,
-    val descricaoBase: String?
+    val descricaoBase: String?,
+    // Quem lançou. Importa nos gastos de um grupo, que misturam vários membros
+    val usuarioId: Long? = null,
+    val loginUsuario: String? = null
 )
 
 // A quais parcelas de uma compra a edição ou exclusão se aplica (vai na URL: ?escopo=PROXIMAS)

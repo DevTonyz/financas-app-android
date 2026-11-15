@@ -13,6 +13,8 @@ import com.antony.financasapp.core.SessionEvents
 import com.antony.financasapp.ui.appAtual
 import com.antony.financasapp.ui.cadastro.TelaDeCadastro
 import com.antony.financasapp.ui.categorias.TelaCategorias
+import com.antony.financasapp.ui.grupos.TelaGrupo
+import com.antony.financasapp.ui.grupos.TelaGrupos
 import com.antony.financasapp.ui.login.TelaDeLogin
 import com.antony.financasapp.ui.painel.TelaPainel
 import com.antony.financasapp.ui.transacoes.TelaFormTransacao
@@ -25,10 +27,19 @@ object Rotas {
     const val HOME = "home"
     const val CATEGORIAS = "categorias"
     const val TRANSACOES = "transacoes"
+    const val GRUPOS = "grupos"
 
-    // "?id={id}" deixa o id opcional: sem ele a tela cria, com ele edita
-    const val FORM_TRANSACAO = "transacao?id={id}"
-    fun formTransacao(id: Long? = null) = if (id == null) "transacao" else "transacao?id=$id"
+    // {id} sem "?" é obrigatório: a tela do grupo sempre precisa saber qual grupo é
+    const val GRUPO = "grupo/{id}"
+    fun grupo(id: Long) = "grupo/$id"
+
+    // "?id=" e "&grupoId=" são opcionais: sem id a tela cria, com id edita.
+    // grupoId preenche o campo "Grupo" ao criar um gasto a partir da tela do grupo
+    const val FORM_TRANSACAO = "transacao?id={id}&grupoId={grupoId}"
+    fun formTransacao(id: Long? = null, grupoId: Long? = null): String {
+        val parametros = listOfNotNull(id?.let { "id=$it" }, grupoId?.let { "grupoId=$it" })
+        return if (parametros.isEmpty()) "transacao" else "transacao?" + parametros.joinToString("&")
+    }
 }
 
 // Vai para [rota] e apaga todo o histórico, para o botão "voltar" não reabrir telas antigas
@@ -70,6 +81,7 @@ fun AppNavHost() {
         composable(Rotas.HOME) {
             TelaPainel(
                 onAbrirCategorias = { navController.navigate(Rotas.CATEGORIAS) },
+                onAbrirGrupos = { navController.navigate(Rotas.GRUPOS) },
                 onVerTodas = { navController.navigate(Rotas.TRANSACOES) },
                 onNovaTransacao = { navController.navigate(Rotas.formTransacao()) },
                 onEditarTransacao = { navController.navigate(Rotas.formTransacao(it)) },
@@ -92,13 +104,36 @@ fun AppNavHost() {
             )
         }
 
+        composable(Rotas.GRUPOS) {
+            TelaGrupos(
+                onVoltar = { navController.popBackStack() },
+                onAbrirGrupo = { navController.navigate(Rotas.grupo(it)) }
+            )
+        }
+
+        composable(
+            Rotas.GRUPO,
+            arguments = listOf(navArgument("id") { type = NavType.LongType })
+        ) { entrada ->
+            TelaGrupo(
+                id = entrada.arguments!!.getLong("id"),
+                onVoltar = { navController.popBackStack() },
+                onNovoGasto = { navController.navigate(Rotas.formTransacao(grupoId = it)) },
+                onEditarTransacao = { navController.navigate(Rotas.formTransacao(it)) }
+            )
+        }
+
         composable(
             Rotas.FORM_TRANSACAO,
-            // Long não aceita null como argumento de rota, então -1 significa "sem id"
-            arguments = listOf(navArgument("id") { type = NavType.LongType; defaultValue = -1L })
+            // Long não aceita null como argumento de rota, então -1 significa "sem valor"
+            arguments = listOf(
+                navArgument("id") { type = NavType.LongType; defaultValue = -1L },
+                navArgument("grupoId") { type = NavType.LongType; defaultValue = -1L }
+            )
         ) { entrada ->
             val id = entrada.arguments?.getLong("id")?.takeIf { it > 0 }
-            TelaFormTransacao(id = id, onVoltar = { navController.popBackStack() })
+            val grupoId = entrada.arguments?.getLong("grupoId")?.takeIf { it > 0 }
+            TelaFormTransacao(id = id, grupoId = grupoId, onVoltar = { navController.popBackStack() })
         }
     }
 }

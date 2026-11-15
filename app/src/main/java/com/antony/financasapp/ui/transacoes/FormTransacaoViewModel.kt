@@ -3,11 +3,13 @@ package com.antony.financasapp.ui.transacoes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.antony.financasapp.data.CategoriaRepository
+import com.antony.financasapp.data.GrupoRepository
 import com.antony.financasapp.data.Resultado
 import com.antony.financasapp.data.TransacaoRepository
 import com.antony.financasapp.dto.CategoriaResponse
 import com.antony.financasapp.dto.EscopoParcelas
 import com.antony.financasapp.dto.FormaPagamento
+import com.antony.financasapp.dto.GrupoResponse
 import com.antony.financasapp.dto.TransacaoRequest
 import com.antony.financasapp.ui.dataDaApiParaIso
 import com.antony.financasapp.ui.hojeIso
@@ -35,6 +37,9 @@ data class FormTransacaoUiState(
     val categoriaId: Long? = null,
     val formaPagamento: FormaPagamento = FormaPagamento.PIX,
     val parcelas: String = "1",
+    // Grupo opcional: nulo = gasto só meu. Os grupos possíveis são os de que faço parte
+    val grupoId: Long? = null,
+    val grupos: List<GrupoResponse> = emptyList(),
     // Erros da validação, um por campo, para aparecer embaixo de cada um
     val erroDescricao: String? = null,
     val erroValor: String? = null,
@@ -50,18 +55,20 @@ data class FormTransacaoUiState(
     val concluido: String? = null
 )
 
-/** [id] nulo = criar; com id = editar aquela transação. */
+/**
+ * [id] nulo = criar; com id = editar aquela transação.
+ * [grupoInicial]: ao criar a partir da tela de um grupo, o campo "Grupo" já vem preenchido.
+ */
 class FormTransacaoViewModel(
     private val id: Long?,
+    grupoInicial: Long?,
     private val repository: TransacaoRepository,
-    private val categoriaRepository: CategoriaRepository
+    private val categoriaRepository: CategoriaRepository,
+    private val grupoRepository: GrupoRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(FormTransacaoUiState(editando = id != null))
+    private val _uiState = MutableStateFlow(FormTransacaoUiState(editando = id != null, grupoId = grupoInicial))
     val uiState: StateFlow<FormTransacaoUiState> = _uiState.asStateFlow()
-
-    // Guardado só para não perder o grupo ao editar (a tela de grupos vem na tarefa 07)
-    private var grupoId: Long? = null
 
     init {
         carregar()
@@ -76,6 +83,8 @@ class FormTransacaoViewModel(
                 return@launch
             }
             _uiState.update { it.copy(categorias = (categorias as Resultado.Sucesso).dados) }
+            // Se a lista de grupos falhar, o formulário segue funcionando, só sem a opção de grupo
+            (grupoRepository.listar() as? Resultado.Sucesso)?.let { g -> _uiState.update { it.copy(grupos = g.dados) } }
 
             if (id == null) {
                 _uiState.update { it.copy(carregando = false) }
@@ -84,10 +93,10 @@ class FormTransacaoViewModel(
             when (val resultado = repository.buscar(id)) {
                 is Resultado.Sucesso -> {
                     val t = resultado.dados
-                    grupoId = t.grupoId
                     _uiState.update {
                         it.copy(
                             carregando = false,
+                            grupoId = t.grupoId,
                             parcela = infoParcela(t.numeroParcela, t.parcelas),
                             // Numa parcela mostramos o nome sem o " 2/3": a API recoloca o número ao salvar
                             descricao = t.descricaoBase ?: t.descricao,
@@ -117,6 +126,8 @@ class FormTransacaoViewModel(
     fun aoMudarCategoria(id: Long) = _uiState.update { it.copy(categoriaId = id, erroCategoria = null) }
 
     fun aoMudarFormaPagamento(forma: FormaPagamento) = _uiState.update { it.copy(formaPagamento = forma) }
+
+    fun aoMudarGrupo(id: Long?) = _uiState.update { it.copy(grupoId = id) }
 
     fun aoMudarParcelas(texto: String) = _uiState.update {
         if (texto.length <= 2 && texto.all(Char::isDigit)) it.copy(parcelas = texto, erroParcelas = null) else it
@@ -171,7 +182,7 @@ class FormTransacaoViewModel(
             categoriaId = estado.categoriaId!!,
             formaPagamento = estado.formaPagamento,
             parcelas = parcelas!!,
-            grupoId = grupoId
+            grupoId = estado.grupoId
         )
     }
 

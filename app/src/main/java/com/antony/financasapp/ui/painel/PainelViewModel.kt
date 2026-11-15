@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.antony.financasapp.data.Resultado
 import com.antony.financasapp.data.TransacaoRepository
 import com.antony.financasapp.dto.TransacaoResponse
+import com.antony.financasapp.ui.deslocarMes
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,9 +53,8 @@ class PainelViewModel(private val repository: TransacaoRepository) : ViewModel()
 
     private fun trocarMes(delta: Int) {
         _uiState.update {
-            // Converte para "meses desde o ano 0" para a virada de ano sair de graça
-            val total = it.ano * 12 + (it.mes - 1) + delta
-            it.copy(mes = total % 12 + 1, ano = total / 12)
+            val (mes, ano) = deslocarMes(it.mes, it.ano, delta)
+            it.copy(mes = mes, ano = ano)
         }
         carregar()
     }

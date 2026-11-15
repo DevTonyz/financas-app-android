@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.antony.financasapp.dto.FormaPagamento
+import com.antony.financasapp.dto.GrupoResponse
 import com.antony.financasapp.ui.app
 import com.antony.financasapp.ui.dataIsoParaExibir
 import com.antony.financasapp.ui.isoParaMillisUtc
@@ -32,9 +33,10 @@ import com.antony.financasapp.ui.millisUtcParaIso
 @Composable
 fun TelaFormTransacao(
     id: Long?,
+    grupoId: Long?,
     onVoltar: () -> Unit,
     viewModel: FormTransacaoViewModel = viewModel {
-        FormTransacaoViewModel(id, app().transacaoRepository, app().categoriaRepository)
+        FormTransacaoViewModel(id, grupoId, app().transacaoRepository, app().categoriaRepository, app().grupoRepository)
     }
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
@@ -194,6 +196,18 @@ private fun Formulario(estado: FormTransacaoUiState, viewModel: FormTransacaoVie
             habilitado = estado.parcela == null,
             ajuda = if (estado.parcela != null) "Parcelas são sempre no crédito" else null
         )
+
+        // Só aparece se a pessoa está em algum grupo. "Nenhum" (null) = gasto só meu
+        if (estado.grupos.isNotEmpty()) {
+            CampoDeLista(
+                rotulo = "Grupo (opcional)",
+                selecionado = estado.grupos.firstOrNull { it.id == estado.grupoId }?.nome ?: "Nenhum",
+                opcoes = listOf<GrupoResponse?>(null) + estado.grupos,
+                textoDaOpcao = { it?.nome ?: "Nenhum" },
+                aoEscolher = { viewModel.aoMudarGrupo(it?.id) },
+                ajuda = if (estado.grupoId != null) "Entra no total e no acerto de contas do grupo" else null
+            )
+        }
 
         // Parcelas só existem no crédito. Na edição não aparecem: a API divide em parcelas
         // só ao criar, então mudar o número aqui não criaria nem apagaria parcelas

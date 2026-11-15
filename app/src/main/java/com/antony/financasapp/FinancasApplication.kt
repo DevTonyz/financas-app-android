@@ -4,6 +4,7 @@ import android.app.Application
 import com.antony.financasapp.core.SessionManager
 import com.antony.financasapp.data.AuthRepository
 import com.antony.financasapp.data.CategoriaRepository
+import com.antony.financasapp.data.GrupoRepository
 import com.antony.financasapp.data.TransacaoRepository
 import com.antony.financasapp.network.ApiService
 import com.antony.financasapp.network.RetrofitClient
@@ -24,4 +25,6 @@ class FinancasApplication : Application() {
     val transacaoRepository by lazy { TransacaoRepository(api) }
 
     val categoriaRepository by lazy { CategoriaRepository(api) }
+
+    val grupoRepository by lazy { GrupoRepository(api) }
 }

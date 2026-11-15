@@ -5,8 +5,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
@@ -21,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.antony.financasapp.ui.SeletorDeMes
 import com.antony.financasapp.ui.app
 import com.antony.financasapp.ui.formatarReais
 import com.antony.financasapp.ui.mesPorExtenso
@@ -31,6 +30,7 @@ import com.antony.financasapp.ui.transacoes.ItemDeTransacao
 @Composable
 fun TelaPainel(
     onAbrirCategorias: () -> Unit,
+    onAbrirGrupos: () -> Unit,
     onVerTodas: () -> Unit,
     onNovaTransacao: () -> Unit,
     onEditarTransacao: (Long) -> Unit,
@@ -43,7 +43,7 @@ fun TelaPainel(
         topBar = {
             TopAppBar(
                 title = { Text("Minhas finanças") },
-                actions = { MenuDoPainel(onAbrirCategorias, onSair) }
+                actions = { MenuDoPainel(onAbrirCategorias, onAbrirGrupos, onSair) }
             )
         },
         floatingActionButton = {
@@ -115,23 +115,6 @@ fun TelaPainel(
 }
 
 @Composable
-private fun SeletorDeMes(texto: String, aoVoltar: () -> Unit, aoAvancar: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        IconButton(onClick = aoVoltar) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Mês anterior")
-        }
-        Text(texto, style = MaterialTheme.typography.titleMedium)
-        IconButton(onClick = aoAvancar) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Próximo mês")
-        }
-    }
-}
-
-@Composable
 private fun CardDoTotal(total: String) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
@@ -143,7 +126,7 @@ private fun CardDoTotal(total: String) {
 
 // Menu dos três pontinhos na barra superior. Aberto/fechado é só visual, por isso fica na tela
 @Composable
-private fun MenuDoPainel(onAbrirCategorias: () -> Unit, onSair: () -> Unit) {
+private fun MenuDoPainel(onAbrirCategorias: () -> Unit, onAbrirGrupos: () -> Unit, onSair: () -> Unit) {
     var aberto by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { aberto = true }) {
@@ -153,6 +136,10 @@ private fun MenuDoPainel(onAbrirCategorias: () -> Unit, onSair: () -> Unit) {
             DropdownMenuItem(
                 text = { Text("Categorias") },
                 onClick = { aberto = false; onAbrirCategorias() }
+            )
+            DropdownMenuItem(
+                text = { Text("Grupos") },
+                onClick = { aberto = false; onAbrirGrupos() }
             )
             DropdownMenuItem(
                 text = { Text("Sair") },
