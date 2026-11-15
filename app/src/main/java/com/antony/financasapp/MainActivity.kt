@@ -20,6 +20,7 @@ import com.antony.financasapp.core.SessionEvents
 import com.antony.financasapp.core.SessionManager
 import com.antony.financasapp.dto.LoginRequest
 import com.antony.financasapp.network.RetrofitClient
+import com.antony.financasapp.ui.TelaDeCadastro
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,6 +63,18 @@ class MainActivity : ComponentActivity() {
                         composable("login") {
                             // Passamos o controlador para a tela de login poder mudar de tela depois
                             TelaDeLogin(navController = navController)
+                        }
+
+                        composable("cadastro") {
+                            TelaDeCadastro(
+                                onContaCriada = {
+                                    // Entra na home e apaga login/cadastro do histórico
+                                    navController.navigate("home") {
+                                        popUpTo(navController.graph.id) { inclusive = true }
+                                    }
+                                },
+                                onVoltarParaLogin = { navController.popBackStack() }
+                            )
                         }
 
                         composable("home") {
@@ -147,6 +160,12 @@ fun TelaDeLogin(navController: NavController) {
             modifier = Modifier.fillMaxWidth().height(50.dp)
         ) {
             Text("Entrar")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextButton(onClick = { navController.navigate("cadastro") }) {
+            Text("Não tem conta? Criar conta")
         }
     }
 }
