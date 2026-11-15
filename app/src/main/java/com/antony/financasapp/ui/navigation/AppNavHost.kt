@@ -10,8 +10,8 @@ import androidx.navigation.compose.rememberNavController
 import com.antony.financasapp.core.SessionEvents
 import com.antony.financasapp.ui.appAtual
 import com.antony.financasapp.ui.cadastro.TelaDeCadastro
-import com.antony.financasapp.ui.home.TelaPrincipal
 import com.antony.financasapp.ui.login.TelaDeLogin
+import com.antony.financasapp.ui.painel.TelaPainel
 
 // Nomes das rotas num lugar só, para não errar digitando "home" em vários arquivos
 object Rotas {
@@ -57,7 +57,7 @@ fun AppNavHost() {
         }
 
         composable(Rotas.HOME) {
-            TelaPrincipal(
+            TelaPainel(
                 onSair = {
                     app.authRepository.sair()
                     navController.irLimpandoHistorico(Rotas.LOGIN)
